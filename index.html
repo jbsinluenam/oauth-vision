@@ -1,35 +1,35 @@
 <html>
   <head>
     <style>
-      #results {
-        position: fixed;
-        top: 50px;
-        left: 10px;
-        color: white;
-      }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #333; /* Added a background color for better visibility */
+  }
 
-      #results span {
-        margin: 5px 5px;
-      }
+  #results {
+    color: white;
+    text-align: center;
+    margin-top: 20px; /* Adjusted margin for better spacing */
+  }
 
-      video {
-        position: fixed;
-        top: 0;
-        left: 0;
-      }
+  #results div {
+    margin-bottom: 10px; /* Added margin between label and score elements */
+  }
 
-      h1 {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-      }
+  video {
+    max-width: 100%; /* Ensure the video doesn't overflow its container */
+  }
 
-      button {
-        position: fixed;
-        top: 0;
-        left: 0;
-      }
-    </style>
+  h1,
+  button {
+    display: none; /* Hide the button and h1 element */
+  }
+</style>
+
   </head>
   <body>
     <!-- Basic Cloud Vision (Google) Demo -->
