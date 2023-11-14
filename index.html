@@ -1,6 +1,6 @@
 <html>
   <head>
-    <style>
+<style>
   body {
     display: flex;
     align-items: center;
@@ -24,11 +24,18 @@
     max-width: 100%; /* Ensure the video doesn't overflow its container */
   }
 
-  h1,
   button {
-    display: none; /* Hide the button and h1 element */
+    position: absolute;
+    top: calc(100% - 50px); /* Position the button at the bottom */
+    left: 50%; /* Center the button horizontally */
+    transform: translateX(-50%); /* Adjust to center the button */
+    background-color: #fff; /* Add a contrasting background color for visibility */
+    padding: 10px 20px; /* Adjust padding as needed */
+    border: none;
+    cursor: pointer;
   }
 </style>
+
 
   </head>
   <body>
