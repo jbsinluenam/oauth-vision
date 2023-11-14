@@ -1,130 +1,229 @@
+<!DOCTYPE html>
 <html>
-  <head>
-<style>
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #333; /* Added a background color for better visibility */
-  }
 
-  #results {
-    color: white;
-    text-align: center;
-    margin-top: 20px; /* Adjusted margin for better spacing */
-  }
+<head>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: start;
+      justify-content: center;
+      /* height: 100vh; */
+      margin: 0;
+      background-color: #333;
+      padding: 4rem;
+      font-family: sans-serif, Arial;
+      font-weight: 400;
+    }
 
-  #results div {
-    margin-bottom: 10px; /* Added margin between label and score elements */
-  }
+    h1 {
+      color: white;
+      text-align: center;
+    }
 
-  video {
-    max-width: 100%; /* Ensure the video doesn't overflow its container */
-  }
+    h3,
+    p {
+      color: white;
+    }
 
-  button {
-    position: absolute;
-    top: calc(100% - 50px); /* Position the button at the bottom */
-    left: 50%; /* Center the button horizontally */
-    transform: translateX(-50%); /* Adjust to center the button */
-    background-color: #fff; /* Add a contrasting background color for visibility */
-    padding: 10px 20px; /* Adjust padding as needed */
-    border: none;
-    cursor: pointer;
-  }
-</style>
+    #container {
+      position: relative;
+    }
 
+    #results {
+      color: white;
+      text-align: left;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
 
-  </head>
-  <body>
-    <!-- Basic Cloud Vision (Google) Demo -->
+    #results div {
+      margin-bottom: 10px;
+    }
 
-    <video autoplay="true" id="videoElement"></video>
-    <button id="vision_button">Analyze</button>
-    <div id='results'></div>
+    button {
+      position: absolute;
+      top: 60px;
+      left: 10px;
+      background-color: #fff;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+    }
 
-    <script>
-      // Access camera
-      var video = document.querySelector("#videoElement");
-      if (navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then(function (stream) {
-            video.srcObject = stream;
-          })
-          .catch(function (err) {
-            console.log("Something went wrong!");
-          });
+    input[type="file"] {
+      margin-top: 10px;
+    }
+
+    input#fileInput {
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Basic Cloud Vision (Google) Demo -->
+
+  <div id="container">
+
+    <!-- Human is a complex living thing. Sometimes it's hard to be sure how they are feeling, but worry no more our AI can help you determine there feeling  -->
+    <h1>Emotion Detector AI </h1>
+    <h3>Human beings are complex living entities. Sometimes, it's hard to be sure how they are feeling. But worry no
+      more; our
+      AI can help you determine their feelings.</h3>
+
+    <!-- Tell user to upload image below -->
+    <p>Upload a clear image of a human face below, and let AI read the emotions for you.</p>
+    <input type="file" accept="image/*" id="fileInput" />
+    <!-- <button id="vision_button">Analyze</button> -->
+  </div>
+  <div id='results'></div>
+
+  <script>
+    var fileInput = document.getElementById('fileInput');
+
+    fileInput.addEventListener('change', handleFile);
+
+    function handleFile() {
+      var file = fileInput.files[0];
+      if (file) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          analyzeImage(e.target.result);
+        };
+        reader.readAsDataURL(file);
       }
+    }
 
-      // We only get to work when the vision button is clicked
-      document.querySelector("#vision_button").addEventListener('click', evt => {
-        // extract image as base64, scale it down to reduce data transfer speed
-        var scale = 0.25;
-        var canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth * scale;
-        canvas.height = video.videoHeight * scale;
-        canvas.getContext('2d')
-          .drawImage(video, 0, 0, canvas.width, canvas.height);
+    // // We only get to work when the vision button is clicked
+    // document.querySelector("#vision_button").addEventListener('click', evt => {
+    //   var file = fileInput.files[0];
+    //   if (file) {
+    //     var reader = new FileReader();
+    //     reader.onload = function (e) {
+    //       analyzeImage(e.target.result);
+    //     };
+    //     reader.readAsDataURL(file);
+    //   } else {
+    //     results.innerHTML = 'Please select an image.';
+    //   }
+    // });
+
+    function analyzeImage(imageDataUrl) {
+      var scale = 0.25;
+      var canvas = document.createElement("canvas");
+      var img = new Image();
+      img.onload = function () {
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // dataUrl contains base64 version of image
-        var dataUrl = canvas.toDataURL();
+        var dataUrl = canvas.toDataURL("image/jpeg", 0.8); // specify image type and quality
 
         // Send image to Google to analyze
-        // Documentation of the annotate feature: https://cloud.google.com/vision/docs/reference/rest/v1/images/annotate 
         fetch('https://vision.googleapis.com/v1/images:annotate?key=AIzaSyCZfVcbzxsghvx6RMykG53nrhT705yh-jY', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            requests: [
-              {
-                features: [
-                  {
-                    type: 'LABEL_DETECTION'
-                  },
-                  {
-                    type: 'TEXT_DETECTION'
-                  }
-                ],
-                image: {
-                  // have to extract only the image data from dataURL
-                  content: dataUrl.substring('data:image/png;base64,'.length)
-                }
+            requests: [{
+              features: [{
+                type: 'FACE_DETECTION' // Use face detection feature
+              }],
+              image: {
+                content: dataUrl.split(',')[1] // extract only the image data from dataURL
               }
-            ]
+            }]
           })
         }).then(resp => {
           return resp.json();
         }).then(json => {
           // Simply output the response
           console.log(json);
-          results.innerHTML = '';
-          json.responses[0].labelAnnotations.forEach(annotation => {
-            let description = document.createElement('span');
-            let score = document.createElement('span');
+          results.innerHTML = 'This is the result of the analysis: <br>';
 
-            let div = document.createElement('div');
-            description.innerText = annotation.description;
-            score.innerText = annotation.score;
-
-            div.append(description, score);
-
-            results.append(div);
-          });
-
-          // Output detected text
-          let textAnnotations = json.responses[0].textAnnotations;
-          if (textAnnotations && textAnnotations.length > 1) {
-            let textDiv = document.createElement('div');
-            textDiv.innerHTML = `<strong>Detected Text:</strong> ${textAnnotations[0].description}`;
-            results.append(textDiv);
+          // Function to convert likelihood string to numeric score
+          function convertLikelihoodToScore(likelihood) {
+            switch (likelihood) {
+              case 'VERY_LIKELY':
+                return 1;
+              case 'LIKELY':
+                return 0.75;
+              case 'POSSIBLE':
+                return 0.5;
+              case 'UNLIKELY':
+                return 0.25;
+              case 'VERY_UNLIKELY':
+                return 0;
+              default:
+                return 0;
+            }
           }
-        });
-      });
 
-    </script>
-  </body>
+          // Output emotional attributes
+          if (json.responses[0].faceAnnotations && json.responses[0].faceAnnotations.length > 0) {
+            let face = json.responses[0].faceAnnotations[0];
+
+            // Get likelihood scores for each emotion
+            let angerMeter = convertLikelihoodToScore(face.angerLikelihood);
+            let joyMeter = convertLikelihoodToScore(face.joyLikelihood);
+            let sorrowMeter = convertLikelihoodToScore(face.sorrowLikelihood);
+            let surpriseMeter = convertLikelihoodToScore(face.surpriseLikelihood);
+
+            // Create an array of emotions and their likelihood scores
+            let emotions = [
+              { name: 'Anger', score: angerMeter },
+              { name: 'Joy', score: joyMeter },
+              { name: 'Sorrow', score: sorrowMeter },
+              { name: 'Surprise', score: surpriseMeter }
+            ];
+
+            // Sort the emotions array based on likelihood scores in descending order
+            emotions.sort((a, b) => b.score - a.score);
+
+            // Get the emotion with the highest likelihood
+            let dominantEmotion = emotions[0];
+
+            // Output the result
+            let emotionDiv = document.createElement('div');
+
+
+            //display the image
+
+            let image = document.createElement('img');
+
+            image.src = imageDataUrl;
+            image.width = 300;
+            image.height = 300;
+            image.style.marginBottom = '10px';
+            emotionDiv.append(image);
+
+
+            //display all the score 
+
+            emotions.forEach(emotion => {
+              emotionDiv.innerHTML += `<br>
+              ${emotion.name}: ${emotion.score}`;
+            });
+
+            emotionDiv.append(document.createElement('br'));
+            emotionDiv.innerHTML += `Dominant Emotion: 
+            This person is feeling
+            ${dominantEmotion.name}`;
+
+            results.append(emotionDiv);
+          } else {
+            results.innerHTML = 'No face detected.';
+          }
+
+        });
+      };
+      img.src = imageDataUrl;
+    }
+  </script>
+</body>
+
 </html>
