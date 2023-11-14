@@ -2,32 +2,32 @@
   <head>
     <style>
       #results {
-	  position: fixed;
-	  top: 50px;
-	  left: 10px;
-	  color: white;
+        position: fixed;
+        top: 50px;
+        left: 10px;
+        color: white;
       }
 
       #results span {
-	  margin: 5px 5px;
+        margin: 5px 5px;
       }
-      
+
       video {
-	  position: fixed;
-	  top: 0;
-	  left: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
       }
 
       h1 {
-	  position: fixed;
-	  bottom: 0;
-	  left: 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
       }
 
       button {
-	  position: fixed;
-	  top: 0;
-	  left: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
       }
     </style>
   </head>
@@ -37,75 +37,87 @@
     <video autoplay="true" id="videoElement"></video>
     <button id="vision_button">Analyze</button>
     <div id='results'></div>
-    
-    <script>
 
-      // Access camera 
-      var video = document.querySelector("#videoElement");      
-      if (navigator.mediaDevices.getUserMedia) {       
-	  navigator.mediaDevices.getUserMedia({video: true})
-	      .then(function(stream) {
-		  video.srcObject = stream;
-	      })
-	      .catch(function(err) {
-		  console.log("Something went wrong!");
-	      });
+    <script>
+      // Access camera
+      var video = document.querySelector("#videoElement");
+      if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(function (stream) {
+            video.srcObject = stream;
+          })
+          .catch(function (err) {
+            console.log("Something went wrong!");
+          });
       }
 
       // We only get to work when the vision button is clicked
       document.querySelector("#vision_button").addEventListener('click', evt => {
-	  // extract image as base64, scale it down to reduce data transfer speed	  
-	  var scale = 0.25;
-	  var canvas = document.createElement("canvas");
-          canvas.width = video.videoWidth * scale;
-          canvas.height = video.videoHeight * scale;
-          canvas.getContext('2d')
-              .drawImage(video, 0, 0, canvas.width, canvas.height);
+        // extract image as base64, scale it down to reduce data transfer speed
+        var scale = 0.25;
+        var canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth * scale;
+        canvas.height = video.videoHeight * scale;
+        canvas.getContext('2d')
+          .drawImage(video, 0, 0, canvas.width, canvas.height);
 
-	  // dataUrl contains base64 version of image
-          var dataUrl = canvas.toDataURL();
+        // dataUrl contains base64 version of image
+        var dataUrl = canvas.toDataURL();
 
-	  // Send image to google to analyze
-	  // Documentation of the annotate feature: https://cloud.google.com/vision/docs/reference/rest/v1/images/annotate 
-	  fetch('https://vision.googleapis.com/v1/images:annotate?key=AIzaSyCZfVcbzxsghvx6RMykG53nrhT705yh-jY', {
-	      method: 'POST',
-	      headers: {
-		  'Content-Type': 'application/json'
-	      },
-	      body: JSON.stringify({
-		  requests: [
-		      {
-			  features: {
-			      type: 'LABEL_DETECTION'
-			  },
-			  image: {
-			      // have to extract only the image data from dataURL
-			      content: dataUrl.substring('data:image/png;base64,'.length)
-			  }
-		      }
-		  ]
-	      })
-	  }).then( resp => {
-	      return resp.json();
-	  }).then( json => {
-	      // Simply output the response
-	      console.log(json);
-	      results.innerHTML = '';
-	      json.responses[0].labelAnnotations.forEach( annotation => {
-		  let description = document.createElement('span');
-		  let score = document.createElement('span');
+        // Send image to Google to analyze
+        // Documentation of the annotate feature: https://cloud.google.com/vision/docs/reference/rest/v1/images/annotate 
+        fetch('https://vision.googleapis.com/v1/images:annotate?key=AIzaSyCZfVcbzxsghvx6RMykG53nrhT705yh-jY', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            requests: [
+              {
+                features: [
+                  {
+                    type: 'LABEL_DETECTION'
+                  },
+                  {
+                    type: 'TEXT_DETECTION'
+                  }
+                ],
+                image: {
+                  // have to extract only the image data from dataURL
+                  content: dataUrl.substring('data:image/png;base64,'.length)
+                }
+              }
+            ]
+          })
+        }).then(resp => {
+          return resp.json();
+        }).then(json => {
+          // Simply output the response
+          console.log(json);
+          results.innerHTML = '';
+          json.responses[0].labelAnnotations.forEach(annotation => {
+            let description = document.createElement('span');
+            let score = document.createElement('span');
 
-		  let div = document.createElement('div');
-		  description.innerText = annotation.description;
-		  score.innerText = annotation.score;
+            let div = document.createElement('div');
+            description.innerText = annotation.description;
+            score.innerText = annotation.score;
 
-		  div.append(description,score);
+            div.append(description, score);
 
-		  results.append(div);
-	      });
-	  });
+            results.append(div);
+          });
+
+          // Output detected text
+          let textAnnotations = json.responses[0].textAnnotations;
+          if (textAnnotations && textAnnotations.length > 1) {
+            let textDiv = document.createElement('div');
+            textDiv.innerHTML = `<strong>Detected Text:</strong> ${textAnnotations[0].description}`;
+            results.append(textDiv);
+          }
+        });
       });
-      
+
     </script>
   </body>
 </html>
